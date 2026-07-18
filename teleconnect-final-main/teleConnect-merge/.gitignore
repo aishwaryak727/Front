@@ -1,0 +1,26 @@
+# Maven build output
+target/
+bin/
+*.class
+
+# Maven wrapper downloaded distribution
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE - Eclipse
+.classpath
+.project
+.factorypath
+.settings/
+.apt_generated/
+
+# IDE - IntelliJ
+.idea/
+*.iml
+
+# IDE - VS Code
+.vscode/
+
+# Logs & OS
+*.log
+.DS_Store
+Thumbs.db

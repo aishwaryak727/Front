@@ -1,0 +1,146 @@
+server:
+  port: 9090
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      # Global CORS so a browser/front-end can call the gateway directly
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+      routes:
+        # ---- IAM service (auth, users, roles, audit) ----
+        - id: iam-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/teleConnect/iam/**
+
+        # ---- Analytics service (ARPU, churn, utilisation, SLA, reports) ----
+        # NOTE: must be listed BEFORE the subscriber route — its paths
+        # (/teleConnect/api/reports/**) are a more specific prefix of the
+        # subscriber route (/teleConnect/api/**), and routes match in order.
+        - id: analytics-service
+          uri: http://localhost:8089
+          predicates:
+            - Path=/teleConnect/api/reports/**,/teleConnect/api/dashboard/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: analyticsService
+                fallbackUri: forward:/fallback/analytics
+
+        # ---- Subscriber service (accounts, SIM lines) ----
+        - id: subscriber-service
+          uri: http://localhost:8086
+          predicates:
+            - Path=/teleConnect/api/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: subscriberService
+                fallbackUri: forward:/fallback/subscriber
+
+        # ---- Plan service (plans, add-ons, subscriptions) ----
+        - id: plan-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/teleConnect/plan/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: planService
+                fallbackUri: forward:/fallback/plan
+
+        # ---- Usage service (usage records, summaries) ----
+        - id: usage-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/teleConnect/usage/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: usageService
+                fallbackUri: forward:/fallback/usage
+
+        # ---- Billing service (invoices, payments, disputes, reports) ----
+        - id: billing-service
+          uri: http://localhost:8085
+          predicates:
+            - Path=/teleConnect/billing/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: billingService
+                fallbackUri: forward:/fallback/billing
+
+        # ---- Notification service ----
+        - id: notification-service
+          uri: http://localhost:8087
+          predicates:
+            - Path=/teleConnect/notifications/**,/teleConnect/notification/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: notificationService
+                fallbackUri: forward:/fallback/notification
+
+        # ---- Fault & Service Request service ----
+        - id: fault-service
+          uri: http://localhost:8090
+          predicates:
+            - Path=/teleConnect/fault/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: faultService
+                fallbackUri: forward:/fallback/fault
+
+# Resilience4j circuit breaker configuration for gateway routes
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 8
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        slowCallRateThreshold: 50
+        slowCallDurationThreshold: 2s
+        recordExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - org.springframework.web.reactive.function.client.WebClientRequestException
+    instances:
+      subscriberService:
+        baseConfig: default
+      planService:
+        baseConfig: default
+      billingService:
+        baseConfig: default
+      usageService:
+        baseConfig: default
+      analyticsService:
+        baseConfig: default
+      notificationService:
+        baseConfig: default
+      faultService:
+        baseConfig: default
+
+# JWT Configuration - must match secret used by IAM module
+jwt:
+  secret: TeleConnect_Super_Secret_Key_2024_IAM_Min32Chars_XYZ
+
+# Helpful logging while integrating
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    org.springframework.cloud.gateway.handler.RoutePredicateHandlerMapping: INFO
+    com.teleconnect.gateway.security: DEBUG

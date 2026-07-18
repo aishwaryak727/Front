@@ -1,0 +1,111 @@
+{
+  "info": {
+    "name": "TeleConnect - Module 4.6 Fault & Service Request",
+    "description": "All 11 endpoints for the Fault module. Base URL points at the local app (port 8086, context path /teleConnect).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8086/teleConnect" }
+  ],
+  "item": [
+    {
+      "name": "Service Request",
+      "item": [
+        {
+          "name": "POST createRequests",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/fault/createRequests", "host": ["{{baseUrl}}"], "path": ["fault", "createRequests"] },
+            "body": { "mode": "raw", "raw": "{\n  \"accountId\": 1,\n  \"lineId\": 1,\n  \"requestType\": \"PlanChange\",\n  \"requestedBy\": 1,\n  \"raisedDate\": \"2026-06-01\"\n}" }
+          }
+        },
+        {
+          "name": "GET getAllRequests",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/fault/getAllRequests", "host": ["{{baseUrl}}"], "path": ["fault", "getAllRequests"] }
+          }
+        },
+        {
+          "name": "GET getRequests/{id}",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/fault/getRequests/1", "host": ["{{baseUrl}}"], "path": ["fault", "getRequests", "1"] }
+          }
+        },
+        {
+          "name": "PUT updateRequests/{id}",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/fault/updateRequests/1", "host": ["{{baseUrl}}"], "path": ["fault", "updateRequests", "1"] },
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"P\"\n}" }
+          }
+        },
+        {
+          "name": "PUT cancelRequests/{id}",
+          "request": {
+            "method": "PUT",
+            "url": { "raw": "{{baseUrl}}/fault/cancelRequests/2", "host": ["{{baseUrl}}"], "path": ["fault", "cancelRequests", "2"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Fault Ticket",
+      "item": [
+        {
+          "name": "POST createTickets",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/fault/createTickets", "host": ["{{baseUrl}}"], "path": ["fault", "createTickets"] },
+            "body": { "mode": "raw", "raw": "{\n  \"accountId\": 1,\n  \"lineId\": 1,\n  \"faultType\": \"SlowData\",\n  \"description\": \"Mobile data very slow\",\n  \"priority\": \"H\",\n  \"raisedDate\": \"2026-06-01\"\n}" }
+          }
+        },
+        {
+          "name": "GET getAllTickets",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/fault/getAllTickets", "host": ["{{baseUrl}}"], "path": ["fault", "getAllTickets"] }
+          }
+        },
+        {
+          "name": "GET getTickets/{id}",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/fault/getTickets/1", "host": ["{{baseUrl}}"], "path": ["fault", "getTickets", "1"] }
+          }
+        },
+        {
+          "name": "PUT assignTickets/{id}",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/fault/assignTickets/1", "host": ["{{baseUrl}}"], "path": ["fault", "assignTickets", "1"] },
+            "body": { "mode": "raw", "raw": "{\n  \"assignedToId\": 5\n}" }
+          }
+        },
+        {
+          "name": "PUT updateTickets/{id}",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/fault/updateTickets/1", "host": ["{{baseUrl}}"], "path": ["fault", "updateTickets", "1"] },
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"P\"\n}" }
+          }
+        },
+        {
+          "name": "PUT resolveTickets/{id}",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/fault/resolveTickets/1", "host": ["{{baseUrl}}"], "path": ["fault", "resolveTickets", "1"] },
+            "body": { "mode": "raw", "raw": "{\n  \"resolvedDate\": \"2026-06-10\"\n}" }
+          }
+        }
+      ]
+    }
+  ]
+}
