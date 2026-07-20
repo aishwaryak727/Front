@@ -1,6 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { Router, RouterLink, RouterOutlet, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { NotificationService } from '../services/notification.service';
+import { UserService } from '../services/user.service';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -27,6 +29,49 @@ import { CommonModule } from '@angular/common';
         <nav class="nav-menu">
           <a routerLink="/profile" routerLinkActive="active" class="nav-item">
             <span class="icon">👤</span> Profile
+          </a>
+
+          <!-- Alerts Notifications Link -->
+          <a *ngIf="authService.hasPermission('VIEW_NOTIFICATIONS')" 
+             routerLink="/notifications" routerLinkActive="active" class="nav-item">
+            <span class="icon">🔔</span> Notifications
+            <span class="badge-unread" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+          </a>
+
+          <!-- Subscriber Accounts & SIM Lines (Subscribers + CS Agents + Admins) -->
+          <a *ngIf="authService.hasAnyPermission(['VIEW_SUBSCRIBER', 'VIEW_OWN_PLAN'])" 
+             routerLink="/subscriber/accounts" routerLinkActive="active" class="nav-item">
+            <span class="icon">📱</span> SIM & Accounts
+          </a>
+
+          <!-- Telecom Plans & Add-Ons (Subscribers + CS Agents + Admins) -->
+          <a *ngIf="authService.hasAnyPermission(['VIEW_PLAN', 'VIEW_OWN_PLAN'])" 
+             routerLink="/plans" routerLinkActive="active" class="nav-item">
+            <span class="icon">📋</span> Plans & Add-Ons
+          </a>
+
+          <!-- Usage Tracking & Analytics (Subscribers + CS Agents + Admins + Compliance) -->
+          <a *ngIf="authService.hasPermission('USAGE_RECORDS')" 
+             routerLink="/usage" routerLinkActive="active" class="nav-item">
+            <span class="icon">📊</span> Usage & Analytics
+          </a>
+
+          <!-- Billing, Invoices & Disputes (Subscribers + CS Agents + Admins + Billing Specialist) -->
+          <a *ngIf="authService.hasAnyPermission(['VIEW_INVOICE', 'PAY_BILL', 'BILLING_CYCLE'])" 
+             routerLink="/billing" routerLinkActive="active" class="nav-item">
+            <span class="icon">💳</span> Billing & Invoices
+          </a>
+
+          <!-- Faults & Tickets (Subscribers + CS Agents + Admins + Operators) -->
+          <a *ngIf="authService.hasAnyPermission(['SERVICE_REQUEST', 'GET_UPDATE_TICKET', 'RESOLVE_TICKET'])" 
+             routerLink="/faults" routerLinkActive="active" class="nav-item">
+            <span class="icon">🔧</span> Faults & Support
+          </a>
+
+          <!-- Executive Analytics & Reports (Admins + Billing + Operators + Compliance) -->
+          <a *ngIf="authService.hasAnyPermission(['VIEW_REPORT_ARPU', 'VIEW_REPORT_CHURN', 'VIEW_REPORT_NETWORK_UTILISATION', 'VIEW_REPORT_SLA_COMPLIANCE', 'VIEW_REPORT_COLLECTION_EFFICIENCY', 'VIEW_REPORT_SUBSCRIBER_GROWTH', 'GENERATE_REPORT'])" 
+             routerLink="/analytics" routerLinkActive="active" class="nav-item">
+            <span class="icon">📈</span> Executive Analytics
           </a>
 
           <!-- Admin & CS Agent Only -->
@@ -61,6 +106,16 @@ import { CommonModule } from '@angular/common';
     .layout-container {
       display: flex;
       min-height: 100vh;
+    }
+    .badge-unread {
+      background: var(--accent-glow);
+      color: var(--accent-primary);
+      border: 1px solid var(--accent-primary);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 999px;
+      margin-left: auto;
     }
     .sidebar {
       width: 260px;
@@ -206,9 +261,43 @@ import { CommonModule } from '@angular/common';
     }
   `]
 })
-export class LayoutComponent {
+export class LayoutComponent implements OnInit, OnDestroy {
   readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly notificationService = inject(NotificationService);
+  private readonly userService = inject(UserService);
+
+  unreadCount = 0;
+  private userId: number | null = null;
+  private intervalId: any;
+
+  ngOnInit() {
+    this.userService.getMe().subscribe({
+      next: (user) => {
+        this.userId = user.userId;
+        this.fetchUnreadCount();
+        // Poll every 30 seconds
+        this.intervalId = setInterval(() => {
+          this.fetchUnreadCount();
+        }, 30000);
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
+  }
+
+  fetchUnreadCount() {
+    if (this.userId) {
+      this.notificationService.getUnreadCount(this.userId).subscribe({
+        next: (count) => this.unreadCount = count,
+        error: () => {}
+      });
+    }
+  }
 
   getInitials(): string {
     const name = this.authService.currentUser()?.name || '';
